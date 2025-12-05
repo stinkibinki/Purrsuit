@@ -8,11 +8,27 @@
 		{
 			"name":"Scene",
 			"nodes":[
-				0
+				0,
+				1
 			]
 		}
 	],
 	"nodes":[
+		{
+			"camera":0,
+			"name":"Camera",
+			"rotation":[
+				-0.10776304453611374,
+				0.06588805466890335,
+				0.007157579530030489,
+				0.9919650554656982
+			],
+			"translation":[
+				0.10027170181274414,
+				3.935473680496216,
+				5.220881462097168
+			]
+		},
 		{
 			"mesh":0,
 			"name":"Cube",
@@ -34,17 +50,26 @@
 			]
 		}
 	],
+	"cameras":[
+		{
+			"name":"Camera.001",
+			"perspective":{
+				"aspectRatio":1.7777777777777777,
+				"yfov":1.2847671700091423,
+				"zfar":1000,
+				"znear":0.10000000149011612
+			},
+			"type":"perspective"
+		}
+	],
 	"materials":[
 		{
 			"doubleSided":true,
 			"name":"yellow",
 			"pbrMetallicRoughness":{
-				"baseColorFactor":[
-					0.8026384115219116,
-					0.6236163377761841,
-					0.09284153580665588,
-					1
-				],
+				"baseColorTexture":{
+					"index":0
+				},
 				"metallicFactor":0,
 				"roughnessFactor":0.5
 			}
@@ -64,6 +89,19 @@
 					"material":0
 				}
 			]
+		}
+	],
+	"textures":[
+		{
+			"sampler":0,
+			"source":0
+		}
+	],
+	"images":[
+		{
+			"mimeType":"image/png",
+			"name":"Untitled",
+			"uri":"Untitled.png"
 		}
 	],
 	"accessors":[
@@ -126,6 +164,12 @@
 			"byteLength":552,
 			"byteOffset":6656,
 			"target":34963
+		}
+	],
+	"samplers":[
+		{
+			"magFilter":9729,
+			"minFilter":9987
 		}
 	],
 	"buffers":[
