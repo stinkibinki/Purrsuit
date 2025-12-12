@@ -435,7 +435,7 @@ export class GLTFLoader {
         return camera;
     }
 
-    loadNode(nameOrIndex) {
+    loadNode(nameOrIndex, lookupTable) {
         const gltfSpec = this.findByNameOrIndex(this.gltf.nodes, nameOrIndex);
         if (!gltfSpec) {
             return null;
@@ -448,9 +448,14 @@ export class GLTFLoader {
 
         entity.addComponent(new Transform(gltfSpec));
 
+        // Register this node in the Scene lookup
+        if (lookupTable && gltfSpec.name) {
+            lookupTable.set(gltfSpec.name, entity);
+        }
+
         if (gltfSpec.children) {
             for (const childIndex of gltfSpec.children) {
-                const childNode = this.loadNode(childIndex);
+                const childNode = this.loadNode(childIndex, lookupTable);
                 childNode.addComponent(new Parent(entity));
             }
         }
@@ -481,8 +486,16 @@ export class GLTFLoader {
         }
 
         const scene = [];
+
+        // lookup table
+        scene.entitiesByName = new Map();
+        
+        scene.getEntityByName = function(name) {
+            return this.entitiesByName.get(name) ?? null;
+        };
+
         if (gltfSpec.nodes) {
-            scene.push(...gltfSpec.nodes.map(nodeIndex => this.loadNode(nodeIndex)));
+            scene.push(...gltfSpec.nodes.map(nodeIndex => this.loadNode(nodeIndex, scene.entitiesByName)));
         }
 
         this.cache.set(gltfSpec, scene);

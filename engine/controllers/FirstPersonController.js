@@ -16,10 +16,25 @@ export class FirstPersonController {
         this.entity = entity;
         this.domElement = domElement;
 
-        this.keys = {};
-
         this.pitch = pitch;
         this.yaw = yaw;
+
+        // initialize yaw/pitch from existing GLTF rotation
+        const transform = entity.getComponentOfType(Transform);
+        if (transform) {
+            const q = transform.rotation; // quat [x, y, z, w]
+
+            // pitch (rotation around X)
+            const sinp = 2 * (q[3] * q[0] - q[1] * q[2]);
+            this.pitch = Math.asin(Math.min(Math.max(sinp, -1), 1));
+
+            // yaw (rotation around Y)
+            const siny_cosp = 2 * (q[3] * q[1] + q[2] * q[0]);
+            const cosy_cosp = 1 - 2 * (q[1] * q[1] + q[0] * q[0]);
+            this.yaw = Math.atan2(siny_cosp, cosy_cosp);
+        }
+
+        this.keys = {};
 
         this.velocity = velocity;
         this.acceleration = acceleration;
