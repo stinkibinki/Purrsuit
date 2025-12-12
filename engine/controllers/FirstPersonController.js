@@ -16,6 +16,9 @@ export class FirstPersonController {
         this.entity = entity;
         this.domElement = domElement;
 
+        this.pitch = pitch;
+        this.yaw = yaw;
+
         // initialize yaw/pitch from existing GLTF rotation
         const transform = entity.getComponentOfType(Transform);
         if (transform) {
@@ -32,9 +35,6 @@ export class FirstPersonController {
         }
 
         this.keys = {};
-
-        // this.pitch = pitch;
-        // this.yaw = yaw;
 
         this.velocity = velocity;
         this.acceleration = acceleration;
