@@ -47,12 +47,20 @@ export class Physics {
             && this.intervalIntersection(aabb1.min[2], aabb1.max[2], aabb2.min[2], aabb2.max[2]);
     }
 
-    getTransformedAABB(entity) {
+    /**
+     * Returns an AABB where X/Z width/depth are calculated only for vertices within allowedHeight,
+     * but Y still uses the full min/max of the mesh.
+     * 
+     * @param {Entity} entity 
+     * @param {number[]} allowedHeight - [minY, maxY] interval for sampling
+     */
+    getTransformedAABB(entity, allowedHeight = [0.1, 1]) {
         if (!entity.aabb) return null;
-        
-        // Transform all vertices of the AABB from local to global space.
+
         const matrix = getGlobalModelMatrix(entity);
         const { min, max } = entity.aabb;
+
+        // Transform all 8 vertices
         const vertices = [
             [min[0], min[1], min[2]],
             [min[0], min[1], max[2]],
@@ -64,13 +72,20 @@ export class Physics {
             [max[0], max[1], max[2]],
         ].map(v => vec3.transformMat4(v, v, matrix));
 
-        // Find new min and max by component.
-        const xs = vertices.map(v => v[0]);
-        const ys = vertices.map(v => v[1]);
-        const zs = vertices.map(v => v[2]);
-        const newmin = [Math.min(...xs), Math.min(...ys), Math.min(...zs)];
-        const newmax = [Math.max(...xs), Math.max(...ys), Math.max(...zs)];
-        return { min: newmin, max: newmax };
+        const [minHeight, maxHeight] = allowedHeight;
+
+        // Filter vertices based on allowedHeight
+        const sampledVertices = vertices.filter(v => v[1] >= minHeight && v[1] <= maxHeight);
+
+        // If no vertices are within allowedHeight, fallback to using all vertices for width/depth
+        const xs = sampledVertices.length > 0 ? sampledVertices.map(v => v[0]) : vertices.map(v => v[0]);
+        const zs = sampledVertices.length > 0 ? sampledVertices.map(v => v[2]) : vertices.map(v => v[2]);
+        const ys = vertices.map(v => v[1]); // always full height
+
+        return {
+            min: [Math.min(...xs), Math.min(...ys), Math.min(...zs)],
+            max: [Math.max(...xs), Math.max(...ys), Math.max(...zs)],
+        };
     }
 
     resolveCollision(a, b) {
