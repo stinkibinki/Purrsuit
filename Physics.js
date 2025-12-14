@@ -47,16 +47,10 @@ export class Physics {
             && this.intervalIntersection(aabb1.min[2], aabb1.max[2], aabb2.min[2], aabb2.max[2]);
     }
 
-    /**
-     * Returns an AABB where X/Z width/depth are calculated only for vertices within allowedHeight,
-     * but Y still uses the full min/max of the mesh.
-     * 
-     * @param {Entity} entity 
-     * @param {number[]} allowedHeight - [minY, maxY] interval for sampling
-     */
-    getTransformedAABB(entity, allowedHeight = [0.1, 1]) {
+    getTransformedAABB(entity, allowedHeight = 1.7, targetWidth = 0.6) {
         if (!entity.aabb) return null;
 
+        // Transform all vertices of the AABB from local to global space.
         const matrix = getGlobalModelMatrix(entity);
         const { min, max } = entity.aabb;
 
@@ -72,20 +66,32 @@ export class Physics {
             [max[0], max[1], max[2]],
         ].map(v => vec3.transformMat4(v, v, matrix));
 
-        const [minHeight, maxHeight] = allowedHeight;
+        // Find new min and max by component.
+        const xs = vertices.map(v => v[0]);
+        const ys = vertices.map(v => v[1]);
+        const zs = vertices.map(v => v[2]);
 
-        // Filter vertices based on allowedHeight
-        const sampledVertices = vertices.filter(v => v[1] >= minHeight && v[1] <= maxHeight);
+        const newmin = [Math.min(...xs), Math.min(...ys), Math.min(...zs)];
+        const newmax = [Math.max(...xs), Math.max(...ys), Math.max(...zs)];
 
-        // If no vertices are within allowedHeight, fallback to using all vertices for width/depth
-        const xs = sampledVertices.length > 0 ? sampledVertices.map(v => v[0]) : vertices.map(v => v[0]);
-        const zs = sampledVertices.length > 0 ? sampledVertices.map(v => v[2]) : vertices.map(v => v[2]);
-        const ys = vertices.map(v => v[1]); // always full height
+        // height check
+        // trees and lamps need smaller collisions than the their full width
+        if (newmax[1] > allowedHeight && newmax[1] < 20) {
+            const half = targetWidth * 0.5;
 
-        return {
-            min: [Math.min(...xs), Math.min(...ys), Math.min(...zs)],
-            max: [Math.max(...xs), Math.max(...ys), Math.max(...zs)],
-        };
+            // aabb centered on x,z coords
+            const t = entity.getComponentOfType(Transform);
+            const cx = t.translation[0];
+            const cz = t.translation[2]; 
+
+            newmin[0] = cx - half;
+            newmax[0] = cx + half;
+
+            newmin[2] = cz - half;
+            newmax[2] = cz + half;
+        }
+
+        return { min: newmin, max: newmax };
     }
 
     resolveCollision(a, b) {
