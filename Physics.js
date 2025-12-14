@@ -47,12 +47,14 @@ export class Physics {
             && this.intervalIntersection(aabb1.min[2], aabb1.max[2], aabb2.min[2], aabb2.max[2]);
     }
 
-    getTransformedAABB(entity) {
+    getTransformedAABB(entity, allowedHeight = 1.7, targetWidth = 0.6) {
         if (!entity.aabb) return null;
-        
+
         // Transform all vertices of the AABB from local to global space.
         const matrix = getGlobalModelMatrix(entity);
         const { min, max } = entity.aabb;
+
+        // Transform all 8 vertices
         const vertices = [
             [min[0], min[1], min[2]],
             [min[0], min[1], max[2]],
@@ -68,8 +70,27 @@ export class Physics {
         const xs = vertices.map(v => v[0]);
         const ys = vertices.map(v => v[1]);
         const zs = vertices.map(v => v[2]);
+
         const newmin = [Math.min(...xs), Math.min(...ys), Math.min(...zs)];
         const newmax = [Math.max(...xs), Math.max(...ys), Math.max(...zs)];
+
+        // height check
+        // trees and lamps need smaller collisions than the their full width
+        if (newmax[1] > allowedHeight && newmax[1] < 20) {
+            const half = targetWidth * 0.5;
+
+            // aabb centered on x,z coords
+            const t = entity.getComponentOfType(Transform);
+            const cx = t.translation[0];
+            const cz = t.translation[2]; 
+
+            newmin[0] = cx - half;
+            newmax[0] = cx + half;
+
+            newmin[2] = cz - half;
+            newmax[2] = cz + half;
+        }
+
         return { min: newmin, max: newmax };
     }
 
