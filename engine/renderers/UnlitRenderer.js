@@ -131,14 +131,14 @@ export class UnlitRenderer extends BaseRenderer {
         }
 
         const lightUniformBuffer = this.device.createBuffer({
-            size: 48,
+            size: 48 * 7,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
         const lightBindGroup = this.device.createBindGroup({
             layout: this.pipeline.getBindGroupLayout(3),
             entries: [
-                { binding: 0, resource: lightUniformBuffer },
+                { binding: 0, resource: { buffer: lightUniformBuffer } },
             ],
         });
 
@@ -220,15 +220,24 @@ export class UnlitRenderer extends BaseRenderer {
         this.device.queue.writeBuffer(cameraUniformBuffer, 128, cameraPosition);
         this.renderPass.setBindGroup(0, cameraBindGroup);
 
-        const light = scene.find(entity => entity.getComponentOfType(BurleyLight));
-        const lightComponent = light.getComponentOfType(BurleyLight);
-        const lightColor = vec3.scale(vec3.create(), lightComponent.color,lightComponent.intensity / 255);
-        const lightPosition = mat4.getTranslation(vec3.create(),getGlobalModelMatrix(light));
-        const lightAttenuation = vec3.clone(lightComponent.attenuation);
+        const lights = scene.filter(entity => entity.getComponentOfType(BurleyLight));
+        const lightData = new Float32Array(lights.length * 12);
+        let offset = 0;
+        const lightComponent = lights[0].getComponentOfType(BurleyLight);
+        lights.forEach(light => {
+            const lightComponent = light.getComponentOfType(BurleyLight);
+            const lightColor = vec3.scale(vec3.create(), lightComponent.color, lightComponent.intensity / 255);
+            const lightPosition = mat4.getTranslation(vec3.create(),getGlobalModelMatrix(light));
+            const lightAttenuation = vec3.clone(lightComponent.attenuation);
+
+            lightData.set(lightColor, offset);
+            lightData.set(lightPosition, offset + 4);
+            lightData.set(lightAttenuation, offset + 8);
+            offset += 12;
+            
+        });
         const { lightUniformBuffer, lightBindGroup } = this.prepareLight(lightComponent);
-        this.device.queue.writeBuffer(lightUniformBuffer, 0, lightColor);
-        this.device.queue.writeBuffer(lightUniformBuffer, 16,lightPosition);
-        this.device.queue.writeBuffer(lightUniformBuffer, 32,lightAttenuation);
+        this.device.queue.writeBuffer(lightUniformBuffer, 0, lightData);
         this.renderPass.setBindGroup(3, lightBindGroup);
 
         for (const entity of scene) {

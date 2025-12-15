@@ -27,10 +27,14 @@ struct CameraUniforms {
     position: vec3f,
 }
 
-struct LightUniforms {
-    color: vec3f,
-    position: vec3f,
+struct Light {
+    color: vec3f,     
+    position: vec3f,   
     attenuation: vec3f,
+}
+
+struct LightUniforms {
+    lights: array<Light, 7>,
 }
 
 struct ModelUniforms {
@@ -52,7 +56,7 @@ struct MaterialUniforms {
 @group(2) @binding(1) var baseTexture: texture_2d<f32>;
 @group(2) @binding(2) var baseSampler: sampler;
 
-@group(3) @binding(0) var<uniform> light: LightUniforms;
+@group(3) @binding(0) var<uniform> lightData: LightUniforms;
 
 const PI = 3.14159265358979;
 const GAMMA = 2.2;
@@ -125,29 +129,37 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
     let baseColor = textureSample(baseTexture, baseSampler, input.texcoords);
 
     let surfacePosition = input.position;
-    let d = distance(surfacePosition, light.position);
-    let attenuation = 1 / dot(light.attenuation, vec3f(1, d, d * d));
-    let lightColor = attenuation * light.color;
-
     let N = normalize(input.normal);
-    let L = normalize(light.position - surfacePosition);
     let V = normalize(camera.position - surfacePosition);
-    let H = normalize(L + V);
-
-    let NdotL = max(dot(N, L), 0.0);
-    let NdotV = max(dot(N, V), 0.0);
-    let NdotH = max(dot(N, H), 0.0);
-    let VdotH = max(dot(V, H), 0.0);
 
     let f0 = mix(vec3f(0.04), baseColor.rgb, material.metalness);
     let f90 = vec3f(1);
     let diffuseColor = mix(baseColor.rgb, vec3f(0), material.metalness);
 
-    let diffuse = lightColor * NdotL * BRDF_diffuse(f0, f90, diffuseColor, VdotH);
-    let specular = lightColor * NdotL * BRDF_specular(f0, f90, material.roughness, VdotH, NdotL, NdotV, NdotH);
+    var finalColor = vec3f(0.0);
 
-    let finalColor = diffuse + specular;
-    output.color = vec4f(linearTosRGB(finalColor), 1);
+    for (var i = 0u; i < 7u; i++) {
+        // let light = lights[i];
+        let light = lightData.lights[i];
+
+        let d = distance(surfacePosition, light.position);
+        let attenuation = 1 / dot(light.attenuation, vec3f(1, d, d * d));
+        let lightColor = attenuation * light.color;
+        
+        let L = normalize(light.position - surfacePosition);
+        let H = normalize(L + V);
+
+        let NdotL = max(dot(N, L), 0.0);
+        let NdotV = max(dot(N, V), 0.0);
+        let NdotH = max(dot(N, H), 0.0);
+        let VdotH = max(dot(V, H), 0.0);
+
+        let diffuse = lightColor * NdotL * BRDF_diffuse(f0, f90, diffuseColor, VdotH);
+        let specular = lightColor * NdotL * BRDF_specular(f0, f90, material.roughness, VdotH, NdotL, NdotV, NdotH);
+
+        finalColor += diffuse + specular;
+    }
+    output.color = vec4f(linearTosRGB(finalColor), 1.0);
 
     return output;
 }

@@ -9,8 +9,8 @@ import { FirstPersonController } from 'engine/controllers/FirstPersonController.
 import { Parent } from 'engine/core/Parent.js';
 import { Physics } from './Physics.js';
 import { BurleyLight } from './BurleyLight.js';
-import { CatSpawner } from './catSpawner.js';
-import { createCat } from './catFactory.js';
+import { CatSpawner } from './CatSpawner.js';
+import { createCat } from './CatFactory.js';
 
 import {
     Camera,
@@ -83,15 +83,21 @@ for (const entity of scene) {
 // park bounds (fence)
 const fencePerimeter = computeFencePerimeter(scene);
 
-// add light
-const light = new Entity();
-light.addComponent(new Transform({
-    translation: [6.2211079597473145, 3, 4.393091678619385],
-}));
-light.addComponent(new BurleyLight({
-    intensity: 3,
-}));
-scene.push(light);
+// add lights
+const lightSources = [...scene.entitiesByName].filter(([name, components]) => name.startsWith('Light_source'));
+let lights = new Array(lightSources.length);
+let i = 0;
+for (const source of lightSources) {
+    lights[i] = new Entity();
+    lights[i].addComponent(new Transform({
+        translation: [source[1].components[0].translation[0], 3, source[1].components[0].translation[2]]
+    }));
+    lights[i].addComponent(new BurleyLight({
+        intensity: 1,
+    }));
+    scene.push(lights[i]);
+    i++;
+}
 
 function update(time, dt) {
     for (const entity of scene) {
