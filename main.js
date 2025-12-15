@@ -8,6 +8,9 @@ import { UnlitRenderer } from 'engine/renderers/UnlitRenderer.js';
 import { FirstPersonController } from 'engine/controllers/FirstPersonController.js';
 import { Parent } from 'engine/core/Parent.js';
 import { Physics } from './Physics.js';
+import { BurleyLight } from './BurleyLight.js';
+import { CatSpawner } from './CatSpawner.js';
+import { createCat } from './CatFactory.js';
 
 import {
     Camera,
@@ -35,6 +38,16 @@ const gltfLoader = new GLTFLoader();
 await gltfLoader.load(new URL('./game/models/map/map.gltf', import.meta.url));
 
 const scene = gltfLoader.loadScene(gltfLoader.defaultScene);
+
+//Load cat prefab (model + template transform + renderer-safe materials)
+const catPrefab = await loadCatPrefab('./game/models/cat/cat.gltf', 'Cat');
+
+//Spawn cats from markers
+spawnCatsFromMarkers(scene, catPrefab, {
+  markerPrefix: 'SPAWN_CAT_',
+  count: 21,  // stevilo mack k se jih spawna
+  minDistance: 1.2,
+});
 
 // 1st person camera
 const camera = scene.find(node => node.getComponentOfType(Camera));
@@ -69,6 +82,22 @@ for (const entity of scene) {
 
 // park bounds (fence)
 const fencePerimeter = computeFencePerimeter(scene);
+
+// add lights
+const lightSources = [...scene.entitiesByName].filter(([name, components]) => name.startsWith('Light_source'));
+let lights = new Array(lightSources.length);
+let i = 0;
+for (const source of lightSources) {
+    lights[i] = new Entity();
+    lights[i].addComponent(new Transform({
+        translation: [source[1].components[0].translation[0], 3, source[1].components[0].translation[2]]
+    }));
+    lights[i].addComponent(new BurleyLight({
+        intensity: 1,
+    }));
+    scene.push(lights[i]);
+    i++;
+}
 
 function update(time, dt) {
     for (const entity of scene) {
@@ -130,4 +159,83 @@ function computeFencePerimeter(scene) {
 
     return { min, max };
 }
+async function loadCatPrefab(gltfUrl, nodeName) {
+  const loader = new GLTFLoader();
+  await loader.load(new URL(gltfUrl, import.meta.url));
+  const catScene = loader.loadScene(loader.defaultScene);
 
+  const entity = catScene.getEntityByName(nodeName);
+  if (!entity) {
+    console.log('catScene names:', [...catScene.entitiesByName.keys()]);
+    throw new Error(`Could not find entity named "${nodeName}" in ${gltfUrl}`);
+  }
+
+  const model = entity.getComponentOfType(Model);
+  if (!model) {
+    console.log('Cat entity components:', entity.components);
+    throw new Error(`Entity "${nodeName}" exists but has no Model component`);
+  }
+
+  const tr = entity.getComponentOfType(Transform);
+  const templateRotation = quat.clone(tr.rotation);
+  const templateScale = vec3.clone(tr.scale);
+
+  patchUnlitMaterialsWithFallbackTexture(model);
+
+  console.log('Cat template primitives:', model.primitives?.length);
+
+  return { model, templateRotation, templateScale };
+}
+
+function patchUnlitMaterialsWithFallbackTexture(model) {
+  let fallbackTexture = null;
+
+  for (const prim of model.primitives) {
+    const mat = prim.material;
+    fallbackTexture =
+      mat?.baseColorTexture?.texture ??
+      mat?.baseColorTexture ??
+      mat?.baseTexture ??
+      null;
+
+    if (fallbackTexture) break;
+  }
+
+  if (!fallbackTexture) {
+    console.warn('No fallback texture found on cat model; unlit renderer may still crash.');
+    return;
+  }
+
+  for (const prim of model.primitives) {
+    const mat = prim.material;
+    if (!mat) continue;
+
+    const hasTex =
+      mat.baseColorTexture?.texture ||
+      mat.baseColorTexture ||
+      mat.baseTexture;
+
+    if (!hasTex) {
+      mat.baseColorTexture ??= fallbackTexture;
+      mat.baseTexture ??= fallbackTexture;
+    }
+  }
+}
+
+function spawnCatsFromMarkers(scene, catPrefab, { markerPrefix, count, minDistance }) {
+  const spawner = new CatSpawner(scene, { markerPrefix, count, minDistance });
+
+  spawner.spawn(spawn => {
+    createCat(
+      scene,
+      spawn.position,
+      spawn.rotation,
+      catPrefab.model,
+      catPrefab.templateRotation,
+      catPrefab.templateScale
+    );
+  });
+
+  console.log('Scene entity count after spawning:', scene.length);
+  console.log('Cats in entitiesByName:', [...scene.entitiesByName.keys()].filter(k => k.startsWith('Cat_')));
+}
