@@ -46,6 +46,8 @@ struct MaterialUniforms {
     baseFactor: vec4f,
     metalness: f32,
     roughness: f32,
+    emissiveFactor: f32,
+    emissiveColor: vec3f,
 }
 
 @group(0) @binding(0) var<uniform> camera: CameraUniforms;
@@ -138,7 +140,7 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
 
     var finalColor = vec3f(0.0);
 
-    for (var i = 0u; i < 7u; i++) {
+    for (var i = 0u; i < 8u; i++) {
         // let light = lights[i];
         let light = lightData.lights[i];
 
@@ -159,7 +161,12 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
 
         finalColor += diffuse + specular;
     }
-    output.color = vec4f(linearTosRGB(finalColor), 1.0);
+    
+    // add emissive lighting
+    let emissive = material.emissiveFactor * material.emissiveColor;
+    finalColor += emissive;
+    
+    output.color = vec4f(linearTosRGB(finalColor), baseColor.a);
 
     return output;
 }

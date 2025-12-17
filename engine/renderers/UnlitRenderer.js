@@ -60,7 +60,13 @@ export class UnlitRenderer extends BaseRenderer {
             },
             fragment: {
                 module,
-                targets: [{ format: this.format }],
+                targets: [{
+                    format: this.format,
+                    blend: {
+                        color: { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+                        alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
+                    },
+                }],
             },
             depthStencil: {
                 format: 'depth24plus',
@@ -131,7 +137,7 @@ export class UnlitRenderer extends BaseRenderer {
         }
 
         const lightUniformBuffer = this.device.createBuffer({
-            size: 48 * 7,
+            size: 48 * 8,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
@@ -168,7 +174,7 @@ export class UnlitRenderer extends BaseRenderer {
         const baseTexture = this.prepareTexture(material.baseTexture);
 
         const materialUniformBuffer = this.device.createBuffer({
-            size: 32,
+            size: 48,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
@@ -275,6 +281,8 @@ export class UnlitRenderer extends BaseRenderer {
             ...material.baseFactor,
             material.metalnessFactor,
             material.roughnessFactor,
+            material.emissiveFactor ?? 0,
+            ...(material.emissiveColor ?? [0, 0, 0]),
         ]));
         this.renderPass.setBindGroup(2, materialBindGroup);
 

@@ -39,6 +39,30 @@ await gltfLoader.load(new URL('./game/models/map/map.gltf', import.meta.url));
 
 const scene = gltfLoader.loadScene(gltfLoader.defaultScene);
 
+// add bolt model to scene
+const boltLoader = new GLTFLoader();
+await boltLoader.load(new URL('./game/models/powerup/bolt.gltf', import.meta.url));
+
+const boltScene = boltLoader.loadScene(boltLoader.defaultScene);
+
+const bolt = boltScene.getEntityByName("Bolt");
+
+// Make the bolt material emissive and transparent
+const boltModel = bolt.getComponentOfType(Model);
+if (boltModel) {
+    for (const primitive of boltModel.primitives) {
+        if (primitive.material) {
+            // Set the bolt to be semi-transparent
+            primitive.material.baseFactor[3] = 0.3;  // Alpha/transparency (0-1, lower = more transparent)
+            // Make it glow with emissive yellow light
+            primitive.material.emissiveFactor = 2.0;  // Increase for brighter glow
+            primitive.material.emissiveColor = [1, 1, 1];  // Yellow color (normalize 247/255, 201/255, 10/255)
+        }
+    }
+}
+
+scene.push(bolt);
+
 //Load cat prefab (model + template transform + renderer-safe materials)
 const catPrefab = await loadCatPrefab('./game/models/cat/cat.gltf', 'Cat');
 
@@ -83,21 +107,49 @@ for (const entity of scene) {
 // park bounds (fence)
 const fencePerimeter = computeFencePerimeter(scene);
 
-// add lights
+// add lights to street light models
 const lightSources = [...scene.entitiesByName].filter(([name, components]) => name.startsWith('Light_source'));
-let lights = new Array(lightSources.length);
-let i = 0;
 for (const source of lightSources) {
-    lights[i] = new Entity();
-    lights[i].addComponent(new Transform({
+    let light = new Entity();
+    scene.push(light);
+    light.addComponent(new Transform({
         translation: [source[1].components[0].translation[0], 3, source[1].components[0].translation[2]]
     }));
-    lights[i].addComponent(new BurleyLight({
+    light.addComponent(new BurleyLight({
         intensity: 1,
     }));
-    scene.push(lights[i]);
-    i++;
+    //flickering za eno luc
+    if (source[0] === "Light_source") {
+        light.addComponent({
+            update(t, dt) {
+              //console.log(t);
+              const lightComponent = light.getComponentOfType(BurleyLight);
+              if (t % 10 <= 0.5)
+                  lightComponent.color = [0, 0, 0];
+              else if (t % 10 <= 0.6)
+                  lightComponent.color = [255, 255, 255];
+              else if (t % 10 <= 0.7)
+                  lightComponent.color = [0, 0, 0];
+              else
+                  lightComponent.color = [255, 255, 255];
+            }
+        });
+    }  
 }
+
+// add light to powerup
+const boltLight = new Entity();
+scene.push(boltLight);
+const boltTranslation = bolt.components[0].translation;
+//console.log(boltTranslation);
+boltLight.addComponent(new Transform({
+    translation: [boltTranslation[0], 1.2, boltTranslation[2]]
+}));
+boltLight.addComponent(new BurleyLight({
+    intensity: 1,
+    color: [247, 201, 10]
+}));
+
 
 function update(time, dt) {
     for (const entity of scene) {
@@ -182,7 +234,7 @@ async function loadCatPrefab(gltfUrl, nodeName) {
 
   patchUnlitMaterialsWithFallbackTexture(model);
 
-  console.log('Cat template primitives:', model.primitives?.length);
+  //console.log('Cat template primitives:', model.primitives?.length);
 
   return { model, templateRotation, templateScale };
 }
@@ -236,6 +288,6 @@ function spawnCatsFromMarkers(scene, catPrefab, { markerPrefix, count, minDistan
     );
   });
 
-  console.log('Scene entity count after spawning:', scene.length);
-  console.log('Cats in entitiesByName:', [...scene.entitiesByName.keys()].filter(k => k.startsWith('Cat_')));
+  //console.log('Scene entity count after spawning:', scene.length);
+  //console.log('Cats in entitiesByName:', [...scene.entitiesByName.keys()].filter(k => k.startsWith('Cat_')));
 }
