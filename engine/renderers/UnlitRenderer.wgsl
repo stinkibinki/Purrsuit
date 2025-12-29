@@ -113,6 +113,14 @@ fn sRGBToLinear(color: vec3f) -> vec3f {
     return pow(color, vec3f(GAMMA));
 }
 
+fn lerp(p0: f32, p1: f32, t: f32) -> f32{
+    return p0 * (1 - t) + p1 * t;
+}
+
+fn lerp_vec3f(c1: vec3f, c2: vec3f, t: f32) -> vec3f {
+    return vec3f(lerp(c1[0], c2[0], t), lerp(c1[1], c2[1], t), lerp(c1[2], c2[2], t));
+}
+
 @vertex
 fn vertex(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
@@ -134,7 +142,7 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
     let surfacePosition = input.position;
     let N = normalize(input.normal);
     let V = normalize(camera.position - surfacePosition);
-
+    
     let f0 = mix(vec3f(0.04), baseColor.rgb, material.metalness);
     let f90 = vec3f(1);
     let diffuseColor = mix(baseColor.rgb, vec3f(0), material.metalness);
@@ -151,8 +159,9 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
         let H = normalize(L + V);
 
         var lightColor = light.color;
-
-        if (light.color[0] > 1) {
+        
+        // make bolt light a spotlight
+        if (light.color[0] > 2) {
             let dir = normalize(light.direction);
             let LdotDir = dot(-L, dir);
             let angle = cos(0.5); // snop spotlighta
@@ -182,6 +191,14 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
     let emissive = material.emissiveFactor * material.emissiveColor;
     finalColor += emissive;
     
+    // add fog
+    let dist = distance(camera.position, surfacePosition);
+    const e = 2.71828;
+    var fogDensity = dist/250; // vecji deljitelj pomeni less thick fog
+    let f = 1/pow(pow(e, fogDensity*dist), 2);
+    const fogColor = vec3f(0.05, 0.06, 0.08);
+    finalColor = lerp_vec3f(fogColor, finalColor, f); // IF U DONT WANT FOG zakomentirej to vrstico
+
     output.color = vec4f(linearTosRGB(finalColor), baseColor.a);
 
     return output;

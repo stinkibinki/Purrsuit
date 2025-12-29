@@ -52,7 +52,7 @@ const boltModel = bolt.getComponentOfType(Model);
 if (boltModel) {
     for (const primitive of boltModel.primitives) {
         if (primitive.material) {
-            primitive.material.emissiveFactor = 0.5;  // kok mocno glowa bolt
+            primitive.material.emissiveFactor = 0.4;  // kok mocno glowa bolt
             primitive.material.emissiveColor = [1, 1, 1];
         }
     }
