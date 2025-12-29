@@ -31,6 +31,7 @@ struct Light {
     color: vec3f,     
     position: vec3f,   
     attenuation: vec3f,
+    direction: vec3f,
 }
 
 struct LightUniforms {
@@ -141,15 +142,29 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
     var finalColor = vec3f(0.0);
 
     for (var i = 0u; i < 8u; i++) {
-        // let light = lights[i];
         let light = lightData.lights[i];
 
         let d = distance(surfacePosition, light.position);
-        let attenuation = 1 / dot(light.attenuation, vec3f(1, d, d * d));
-        let lightColor = attenuation * light.color;
+        let attenuation = 1 / dot(light.attenuation, vec3f(1, d, d * d)); // Ad
         
         let L = normalize(light.position - surfacePosition);
         let H = normalize(L + V);
+
+        var lightColor = light.color;
+
+        if (light.color[0] > 1) {
+            let dir = normalize(light.direction);
+            let LdotDir = dot(-L, dir);
+            let angle = cos(0.5); // snop spotlighta
+            var Af = 0.0;
+            if (LdotDir > angle) {
+                Af = smoothstep(angle, 1.0, LdotDir);
+            }
+            lightColor = attenuation * light.color * Af; // Il
+            
+        } else {
+            lightColor = attenuation * light.color; // Il
+        }
 
         let NdotL = max(dot(N, L), 0.0);
         let NdotV = max(dot(N, V), 0.0);
@@ -160,6 +175,7 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
         let specular = lightColor * NdotL * BRDF_specular(f0, f90, material.roughness, VdotH, NdotL, NdotV, NdotH);
 
         finalColor += diffuse + specular;
+    
     }
     
     // add emissive lighting

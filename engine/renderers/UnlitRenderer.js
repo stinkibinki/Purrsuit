@@ -137,7 +137,7 @@ export class UnlitRenderer extends BaseRenderer {
         }
 
         const lightUniformBuffer = this.device.createBuffer({
-            size: 48 * 8,
+            size: 64 * 8,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
@@ -227,7 +227,7 @@ export class UnlitRenderer extends BaseRenderer {
         this.renderPass.setBindGroup(0, cameraBindGroup);
 
         const lights = scene.filter(entity => entity.getComponentOfType(BurleyLight));
-        const lightData = new Float32Array(lights.length * 12);
+        const lightData = new Float32Array(lights.length * 16);
         let offset = 0;
         const lightComponent = lights[0].getComponentOfType(BurleyLight);
         lights.forEach(light => {
@@ -235,12 +235,13 @@ export class UnlitRenderer extends BaseRenderer {
             const lightColor = vec3.scale(vec3.create(), lightComponent.color, lightComponent.intensity / 255);
             const lightPosition = mat4.getTranslation(vec3.create(),getGlobalModelMatrix(light));
             const lightAttenuation = vec3.clone(lightComponent.attenuation);
+            const lightDirection = vec3.clone(lightComponent.direction);
 
             lightData.set(lightColor, offset);
             lightData.set(lightPosition, offset + 4);
             lightData.set(lightAttenuation, offset + 8);
-            offset += 12;
-            
+            lightData.set(lightDirection, offset + 12);
+            offset += 16;
         });
         const { lightUniformBuffer, lightBindGroup } = this.prepareLight(lightComponent);
         this.device.queue.writeBuffer(lightUniformBuffer, 0, lightData);

@@ -20,13 +20,13 @@ const renderer = new Renderer(canvas);
 await renderer.initialize();
 
 const loader = new GLTFLoader();
-await loader.load(new URL('../../../models/monkey/monkey.gltf', import.meta.url));
+await loader.load(new URL('../../../game/models/map/map.gltf', import.meta.url));
 
 const scene = loader.loadScene();
 const camera = loader.loadNode('Camera');
-camera.addComponent(new TouchController(camera, canvas, { distance: 5 }));
+camera.addComponent(new TouchController(camera, canvas, { distance: 10 }));
 
-const model = loader.loadNode('Suzanne');
+const model = loader.loadNode('Tree_03_LOD0.001');
 const material = model.getComponentOfType(Model).primitives[0].material;
 material.diffuse = 1;
 material.specular = 1;
