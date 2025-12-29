@@ -32,7 +32,6 @@ struct Light {
     position: vec3f,   
     attenuation: vec3f,
     direction: vec3f,
-    ltype: f32,
 }
 
 struct LightUniforms {
@@ -184,7 +183,6 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
     finalColor += emissive;
     
     output.color = vec4f(linearTosRGB(finalColor), baseColor.a);
-    output.color += vec4f(baseColor.rgb * 0.05, output.color.a);
 
     return output;
 }

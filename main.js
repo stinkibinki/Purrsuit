@@ -143,7 +143,6 @@ boltLight.addComponent(new Transform({
 boltLight.addComponent(new BurleyLight({
     color: [247, 201, 10],
     intensity: 3,
-    type: 1,
 }));
 
 

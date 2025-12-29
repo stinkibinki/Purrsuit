@@ -236,14 +236,11 @@ export class UnlitRenderer extends BaseRenderer {
             const lightPosition = mat4.getTranslation(vec3.create(),getGlobalModelMatrix(light));
             const lightAttenuation = vec3.clone(lightComponent.attenuation);
             const lightDirection = vec3.clone(lightComponent.direction);
-            const lightType = lightComponent.type;
-            //console.log(lightType, lightColor);
 
             lightData.set(lightColor, offset);
             lightData.set(lightPosition, offset + 4);
             lightData.set(lightAttenuation, offset + 8);
             lightData.set(lightDirection, offset + 12);
-            lightData.set(lightType, offset + 15);
             offset += 16;
         });
         const { lightUniformBuffer, lightBindGroup } = this.prepareLight(lightComponent);

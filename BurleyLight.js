@@ -5,13 +5,11 @@ export class BurleyLight {
         intensity = 0.7,
         attenuation = [0.001, 0, 0.3],
         direction = [0, -1, 0],
-        type = 0,
     } = {}) {
         this.color = color;
         this.intensity = intensity;
         this.attenuation = attenuation;
         this.direction = direction;
-        this.type = type;
     }
 
 }
