@@ -30,20 +30,17 @@ import {
 
 const canvas = document.querySelector('canvas');
 
-// Setup main menu
+// main menu
 const mainMenu = document.getElementById('mainMenu');
 const playButton = document.getElementById('playButton');
 let gameStarted = false;
-
-// Blur canvas initially
-canvas.classList.add('blurred');
 
 playButton.addEventListener('click', () => {
     gameStarted = true;
     canvas.classList.remove('blurred');
     mainMenu.classList.add('hidden');
     
-    // Enable controls after menu closes
+    // enable controls after menu closes
     const controller = camera.getComponentOfType(FirstPersonController);
     if (controller) {
         controller.enabled = true;
