@@ -101,9 +101,19 @@ export class Physics {
 
         // Check if there is collision.
         const isColliding = this.aabbIntersection(aBox, bBox);
+        /*if (b?.name == "Rock") {
+            const dx = Math.max(0, Math.max(aBox.min[0] - bBox.max[0], bBox.min[0] - aBox.max[0]));
+            const dy = Math.max(0, Math.max(aBox.min[1] - bBox.max[1], bBox.min[1] - aBox.max[1]));
+            const dz = Math.max(0, Math.max(aBox.min[2] - bBox.max[2], bBox.min[2] - aBox.max[2]));
+            const d = Math.hypot(dx, dy, dz);
+            //console.log("rock colliding", isColliding, d);
+            console.log(this.intervalIntersection(aBox.min[1], aBox.max[1], bBox.min[1], bBox.max[1]));
+        }*/
         if (!isColliding) {
             return;
         }
+        //console.log("entity", a?.name, "|", "other", b?.name);
+        //console.log("collision");
 
         // Move entity A minimally to avoid collision.
         const diffa = vec3.sub(vec3.create(), bBox.max, aBox.min);
