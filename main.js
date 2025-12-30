@@ -30,23 +30,6 @@ import {
 
 const canvas = document.querySelector('canvas');
 
-// main menu
-const mainMenu = document.getElementById('mainMenu');
-const playButton = document.getElementById('playButton');
-let gameStarted = false;
-
-playButton.addEventListener('click', () => {
-    gameStarted = true;
-    canvas.classList.remove('blurred');
-    mainMenu.classList.add('hidden');
-    
-    // enable controls after menu closes
-    const controller = camera.getComponentOfType(FirstPersonController);
-    if (controller) {
-        controller.enabled = true;
-    }
-});
-
 const renderer = new UnlitRenderer(canvas);
 await renderer.initialize();
 
@@ -94,6 +77,23 @@ camera.aabb = { // aabb collision limit
     min: [-0.2, -0.2, -0.2],
     max: [0.2, 0.2, 0.2],
 };
+
+// main menu
+if (true) { // to disable for testing, set to false
+  playButton.addEventListener('click', () => {
+      mainMenu.classList.add('hidden');
+      
+      // enable controls after menu closes
+      const controller = camera.getComponentOfType(FirstPersonController);
+      if (controller) {
+          controller.enabled = true;
+      }
+  });
+} else {
+  mainMenu.classList.add('hidden');
+  const controller = camera.getComponentOfType(FirstPersonController);
+  controller.enabled = true;
+}
 
 // mark camera as dynamic so physics will handle it
 camera.customProperties = camera.customProperties ?? {};
