@@ -67,12 +67,13 @@ await rockLoader.load(new URL('./game/models/rock/rock.gltf', import.meta.url));
 const rockScene = rockLoader.loadScene(rockLoader.defaultScene);
 
 const rock = rockScene.getEntityByName("Rock");
-scene.push(rock);
 
-rock.addComponent(new Transform({
-    translation: [6.7, 0.4, 6.2],
-    scale: [0.7, 0.7, 0.7],
-}));
+const tRock = rock.getComponentOfType(Transform);
+tRock.translation = [6.7, 0.4, 6.2];
+tRock.scale = [0.7, 0.7, 0.7];
+
+rock.name = "Rock";
+scene.push(rock);
 
 //Load cat prefab (model + template transform + renderer-safe materials)
 const catPrefab = await loadCatPrefab('./game/models/cat/cat.gltf', 'Cat');
@@ -88,7 +89,7 @@ spawnCatsFromMarkers(scene, catPrefab, {
 const camera = scene.find(node => node.getComponentOfType(Camera));
 camera.addComponent(new FirstPersonController(camera, canvas));
 camera.aabb = { // aabb collision limit
-    min: [-0.2, -0.2, -0.2],
+    min: [-0.2, -0.8, -0.2],
     max: [0.2, 0.2, 0.2],
 };
 
@@ -121,15 +122,7 @@ hand.addParent(camera);
 // collision
 const physics = new Physics(scene);
 for (const entity of scene) {
-    const model = entity.getComponentOfType(Model);
-    if (!model) continue;
-
-    const boxes = model.primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
-    entity.aabb = mergeAxisAlignedBoundingBoxes(boxes);
-
-    // Mark static so physics will test against it
-    entity.customProperties = entity.customProperties ?? {};
-    entity.customProperties.isStatic = true;
+    setStaticCollision(entity);
 }
 
 // park bounds (fence)
@@ -237,6 +230,19 @@ function computeFencePerimeter(scene) {
 
     return { min, max };
 }
+
+function setStaticCollision(entity) {
+    const model = entity.getComponentOfType(Model);
+    if (!model) return;
+
+    const boxes = model.primitives.map(primitive => calculateAxisAlignedBoundingBox(primitive.mesh));
+    entity.aabb = mergeAxisAlignedBoundingBoxes(boxes);
+
+    // Mark static so physics will test against it
+    entity.customProperties = entity.customProperties ?? {};
+    entity.customProperties.isStatic = true;
+}
+
 async function loadCatPrefab(gltfUrl, nodeName) {
   const loader = new GLTFLoader();
   await loader.load(new URL(gltfUrl, import.meta.url));
