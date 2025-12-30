@@ -52,13 +52,27 @@ const boltModel = bolt.getComponentOfType(Model);
 if (boltModel) {
     for (const primitive of boltModel.primitives) {
         if (primitive.material) {
-            primitive.material.emissiveFactor = 0.4;  // kok mocno glowa bolt
-            primitive.material.emissiveColor = [1, 1, 1];
+            primitive.material.emissiveFactor = 0.003;  // kok mocno glowa bolt
+            primitive.material.emissiveColor = [247, 201, 10];
         }
     }
 }
 
 scene.push(bolt);
+
+// add rock model to scene
+const rockLoader = new GLTFLoader();
+await rockLoader.load(new URL('./game/models/rock/rock.gltf', import.meta.url));
+
+const rockScene = rockLoader.loadScene(rockLoader.defaultScene);
+
+const rock = rockScene.getEntityByName("Rock");
+scene.push(rock);
+
+rock.addComponent(new Transform({
+    translation: [6.7, 0.4, 6.2],
+    scale: [0.7, 0.7, 0.7],
+}));
 
 //Load cat prefab (model + template transform + renderer-safe materials)
 const catPrefab = await loadCatPrefab('./game/models/cat/cat.gltf', 'Cat');
@@ -66,7 +80,7 @@ const catPrefab = await loadCatPrefab('./game/models/cat/cat.gltf', 'Cat');
 //Spawn cats from markers
 spawnCatsFromMarkers(scene, catPrefab, {
   markerPrefix: 'SPAWN_CAT_',
-  count: 21,  // stevilo mack k se jih spawna
+  count: 10,  // stevilo mack k se jih spawna
   minDistance: 1.2,
 });
 
@@ -300,6 +314,6 @@ function spawnCatsFromMarkers(scene, catPrefab, { markerPrefix, count, minDistan
     );
   });
 
-  //console.log('Scene entity count after spawning:', scene.length);
-  //console.log('Cats in entitiesByName:', [...scene.entitiesByName.keys()].filter(k => k.startsWith('Cat_')));
+  console.log('Scene entity count after spawning:', scene.length);
+  console.log('Cats in entitiesByName:', [...scene.entitiesByName.keys()].filter(k => k.startsWith('Cat_')));
 }

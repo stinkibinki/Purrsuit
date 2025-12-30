@@ -2,6 +2,7 @@ struct VertexInput {
     @location(0) position: vec3f,
     @location(1) texcoords: vec2f,
     @location(2) normal: vec3f,
+    @location(3) tangent: vec3f,
 }
 
 struct VertexOutput {
@@ -9,12 +10,14 @@ struct VertexOutput {
     @location(0) position: vec3f,
     @location(1) texcoords: vec2f,
     @location(2) normal: vec3f,
+    @location(3) tangent: vec3f,
 }
 
 struct FragmentInput {
     @location(0) position: vec3f,
     @location(1) texcoords: vec2f,
     @location(2) normal: vec3f,
+    @location(3) tangent: vec3f,
 }
 
 struct FragmentOutput {
@@ -45,10 +48,12 @@ struct ModelUniforms {
 
 struct MaterialUniforms {
     baseFactor: vec4f,
+    normalFactor: f32,
     metalness: f32,
     roughness: f32,
     emissiveFactor: f32,
     emissiveColor: vec3f,
+    hasNormalMap: f32,
 }
 
 @group(0) @binding(0) var<uniform> camera: CameraUniforms;
@@ -58,6 +63,8 @@ struct MaterialUniforms {
 @group(2) @binding(0) var<uniform> material: MaterialUniforms;
 @group(2) @binding(1) var baseTexture: texture_2d<f32>;
 @group(2) @binding(2) var baseSampler: sampler;
+@group(2) @binding(3) var uNormalTexture: texture_2d<f32>;
+@group(2) @binding(4) var uNormalSampler: sampler;
 
 @group(3) @binding(0) var<uniform> lightData: LightUniforms;
 
@@ -129,6 +136,7 @@ fn vertex(input: VertexInput) -> VertexOutput {
     output.position = (model.modelMatrix * vec4f(input.position, 1)).xyz;
     output.texcoords = input.texcoords;
     output.normal = model.normalMatrix * input.normal;
+    output.tangent = model.normalMatrix * input.tangent;
     
     return output;
 }
@@ -138,11 +146,23 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
     var output: FragmentOutput;
 
     let baseColor = textureSample(baseTexture, baseSampler, input.texcoords);
+    let normalColor = textureSample(uNormalTexture, uNormalSampler, input.texcoords);
 
     let surfacePosition = input.position;
-    let N = normalize(input.normal);
-    let V = normalize(camera.position - surfacePosition);
+
+    var N = normalize(input.normal);
     
+    // normal mapping
+    if (material.hasNormalMap > 0.5) {
+        let scaledNormal = normalize((normalColor.xyz * 2 - 1) * vec3(vec2(material.normalFactor), 1));
+        let T = normalize(input.tangent);
+        let B = normalize(cross(N, T));
+        let tangentMatrix = mat3x3(T, B, N);
+        N = tangentMatrix * scaledNormal;
+    }
+    
+    let V = normalize(camera.position - surfacePosition);
+
     let f0 = mix(vec3f(0.04), baseColor.rgb, material.metalness);
     let f90 = vec3f(1);
     let diffuseColor = mix(baseColor.rgb, vec3f(0), material.metalness);

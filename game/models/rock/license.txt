@@ -1,0 +1,11 @@
+Model Information:
+* title:	Low Poly Rock
+* source:	https://sketchfab.com/3d-models/low-poly-rock-b8efee6a616246089e70bb7d55749385
+* author:	rakutin (https://sketchfab.com/rakutin)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Low Poly Rock" (https://sketchfab.com/3d-models/low-poly-rock-b8efee6a616246089e70bb7d55749385) by rakutin (https://sketchfab.com/rakutin) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

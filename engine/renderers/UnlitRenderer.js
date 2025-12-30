@@ -36,6 +36,12 @@ const vertexBufferLayout = {
             offset: 20,
             format: 'float32x3',
         },
+        {
+            name: 'tangent',
+            shaderLocation: 3,
+            offset: 32,
+            format: 'float32x3',
+        },
     ],
 };
 
@@ -157,7 +163,7 @@ export class UnlitRenderer extends BaseRenderer {
         if (this.gpuObjects.has(texture)) {
             return this.gpuObjects.get(texture);
         }
-
+        
         const { gpuTexture } = this.prepareImage(texture.image); // ignore sRGB
         const { gpuSampler } = this.prepareSampler(texture.sampler);
 
@@ -172,9 +178,10 @@ export class UnlitRenderer extends BaseRenderer {
         }
 
         const baseTexture = this.prepareTexture(material.baseTexture);
+        const normalTexture = material.normalTexture ? this.prepareTexture(material.normalTexture) : baseTexture;
 
         const materialUniformBuffer = this.device.createBuffer({
-            size: 48,
+            size: 64,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
 
@@ -184,6 +191,8 @@ export class UnlitRenderer extends BaseRenderer {
                 { binding: 0, resource: materialUniformBuffer },
                 { binding: 1, resource: baseTexture.gpuTexture },
                 { binding: 2, resource: baseTexture.gpuSampler },
+                { binding: 3, resource: normalTexture.gpuTexture },
+                { binding: 4, resource: normalTexture.gpuSampler },
             ],
         });
 
@@ -278,12 +287,15 @@ export class UnlitRenderer extends BaseRenderer {
     renderPrimitive(primitive) {
         const material = primitive.material;
         const { materialUniformBuffer, materialBindGroup } = this.prepareMaterial(primitive.material);
+        const hasNormalMap = !!material.normalTexture;
         this.device.queue.writeBuffer(materialUniformBuffer, 0, new Float32Array([
             ...material.baseFactor,
+            material.normalFactor,
             material.metalnessFactor,
             material.roughnessFactor,
             material.emissiveFactor ?? 0,
             ...(material.emissiveColor ?? [0, 0, 0]),
+            hasNormalMap ? 1.0 : 0.0,
         ]));
         this.renderPass.setBindGroup(2, materialBindGroup);
 
