@@ -15,13 +15,13 @@ export class Physics {
             if (entity.customProperties?.isDynamic) {
                 for (const other of this.scene) {
                     if (entity !== other) {
-                        if (entity.customProperties?.isPlayer && other.customProperties?.isInteractable) {
-                            this.checkInteractionCollision(entity, other);
-                        }
-
                         if (other.customProperties?.isStatic) {
                             if (other.customProperties?.isFence) continue; // skip fence (we're hard checking the perimiter instead)
                             this.resolveCollision(entity, other);
+                        }
+
+                        if (entity.customProperties?.isPlayer && other.customProperties?.isInteractable) {
+                            this.checkInteractionCollision(entity, other);
                         }
                     }
                     
@@ -59,15 +59,29 @@ export class Physics {
             const pov = p.getComponentOfType(FirstPersonController);
             pov.changeSpeed(10);
 
-            this.scene.deleteEntity(x, true);
+            this.scene.deleteEntity(x);
+            // delete bolt light
+            const bl = this.scene.entitiesByName.get("BoltLight");
+            this.scene.deleteEntity(bl, true);
 
-            setTimeout((p = pov) => {
+            this.scene.HUDMessage = "Speed PowerUp Active!";
+            this.scene.updateHUD();
+
+            setTimeout((p = pov, sc = this.scene) => {
+                sc.HUDMessage = "";
+                sc.updateHUD();
                 p.setDefaultSpeed();
             }, 10000); // reset speed after 10s
         }
         else {
             // cat pickup
-            console.log("cat time");
+            //console.log("cat time", this.scene.isIKeyPressed);
+            if (this.scene.isIKeyPressed) {
+                this.scene.isIKeyPressed = false; // da ne zbriše večkrat na en press
+                this.scene.numOfCatsCollected++;
+                this.scene.updateHUD();
+                this.scene.deleteEntity(x); // collect the cat
+            }
         }
     }
 

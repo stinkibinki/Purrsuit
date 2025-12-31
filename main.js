@@ -42,19 +42,32 @@ const scene = gltfLoader.loadScene(gltfLoader.defaultScene);
 /**
  * Delete entity from scene (or map)
  * @param {*} delEnt entity to remove
- * @param {*} cornerOfShame instead of deleting, it moves the entity off the map
+ * @param {boolean} cornerOfShame instead of deleting, it moves the entity off the map
  */
-scene.deleteEntity = (delEnt, cornerOfShame) => {
-    if (cornerOfShame) {
+scene.deleteEntity = (delEnt, cornerOfShame = false) => {
+    if (!delEnt) return;
+
+    if (cornerOfShame) { // lazy deletion while testing
         const t = delEnt.getComponentOfType(Transform);
-        t.translation[0] = 30; // gre izven mape
+        if (t) {
+            t.translation[0] = 50; // gre izven mape
+        }
     }
-    else {
-        scene.pop(delEnt);
-        scene.entitiesByName.pop(delEnt?.name);
+    else { // deletus
+        const index = scene.indexOf(delEnt);
+        if (index !== -1) {
+            scene.splice(index, 1);
+        }
+        
+        if (delEnt.name && scene.entitiesByName?.has(delEnt.name)) {
+            scene.entitiesByName.delete(delEnt.name);
+        }
     }
-    
 }
+
+const iKey = 'e'; // interaction
+scene.isIKeyPressed = false;
+scene.numOfCatsCollected = 0;
 
 // add bolt model to scene
 const boltLoader = new GLTFLoader();
@@ -95,13 +108,19 @@ scene.push(rock);
 
 //Load cat prefab (model + template transform + renderer-safe materials)
 const catPrefab = await loadCatPrefab('./game/models/cat/cat.gltf', 'Cat');
+const NUM_OF_CATS_SPAWNED = 10; // number of cats spawned
 
 //Spawn cats from markers
 spawnCatsFromMarkers(scene, catPrefab, {
   markerPrefix: 'SPAWN_CAT_',
-  count: 10,  // stevilo mack k se jih spawna
+  count: NUM_OF_CATS_SPAWNED,  // stevilo mack k se jih spawna
   minDistance: 1.2,
 });
+
+// get the integrated cat
+const firstCat = scene.getEntityByName("Cat");
+firstCat.name = "Cat"; // needed to get registered in interaction
+scene.entitiesByName.set("Cat", firstCat);
 
 // 1st person camera
 const camera = scene.find(node => node.getComponentOfType(Camera));
@@ -137,17 +156,19 @@ camera.customProperties.isPlayer = true;
 const hand = scene.getEntityByName("Hand");
 hand.addParent(camera);
 
+var kittyCounter = 0;
 // collision
 const physics = new Physics(scene);
 for (const entity of scene) {
     setStaticCollision(entity);
 
-    if (entity.name?.startsWith("Cat_") || entity?.name == "Bolt") {
+    if (entity.name?.startsWith("Cat") || entity?.name == "Bolt") {
+        if (entity.name?.startsWith("Cat")) kittyCounter++;
         entity.customProperties = entity.customProperties ?? {};
         entity.customProperties.isInteractable = true;
     }
-    
 }
+const NUM_OF_CATS = kittyCounter; // final tally
 
 // park bounds (fence)
 const fencePerimeter = computeFencePerimeter(scene);
@@ -183,6 +204,7 @@ for (const source of lightSources) {
 // add light to powerup
 const boltLight = new Entity();
 scene.push(boltLight);
+scene.entitiesByName.set("BoltLight", boltLight);
 const boltTranslation = bolt.components[0].translation;
 //console.log(boltTranslation);
 boltLight.addComponent(new Transform({
@@ -214,6 +236,64 @@ function resize({ displaySize: { width, height }}) {
 
 new ResizeSystem({ canvas, resize }).start();
 new UpdateSystem({ update, render }).start();
+
+var timerIntervalID = null;
+// interaction
+document.getElementById("playButton").addEventListener('click', (e) => {
+    // timer
+    timerIntervalID = setInterval(timer, 1000);
+
+    document.getElementById("hud").classList = "";
+    scene.updateHUD();
+
+});
+
+const maxTime = 1 * 60 * 1000;
+var time = maxTime;
+function timer() {
+    time -= 1000; // -1sec
+    if (time <= 0) {
+        time = 0;
+        // disable controls
+        const controller = camera.getComponentOfType(FirstPersonController);
+        if (controller) {
+            controller.enabled = false;
+        }
+        clearInterval(timerIntervalID); // disable timer
+    }
+    scene.updateHUD();
+}
+
+document.addEventListener('keydown', (e) => {
+    scene.isIKeyPressed = e.key == iKey;
+    //console.log(scene.numOfCatsCollected, "/", NUM_OF_CATS);
+});
+
+document.addEventListener('keyup', (e) => {
+    scene.isIKeyPressed = false;
+});
+
+scene.HUDMessage = "";
+scene.updateHUD = () => {
+    document.getElementById("score").textContent = "Cats Left: " + (NUM_OF_CATS - scene.numOfCatsCollected);
+    if (NUM_OF_CATS - scene.numOfCatsCollected <= 0) {
+        scene.HUDMessage = "You win!";
+        // or a win screen
+    }
+    else if (time <= 0) {
+        scene.HUDMessage = "You're out of time!";
+        // lose screen
+    }
+
+    document.getElementById("msg").classList = scene.HUDMessage ? "" : "hidden";
+    document.getElementById("msg").textContent = scene.HUDMessage;
+
+    const totalSeconds = Math.max(0, Math.floor(time / 1000));
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    document.getElementById("timer").textContent = mins + ":" + secs.toString().padStart(2, "0");
+
+}
 
 
 /**
