@@ -1,5 +1,6 @@
 import { vec3, quat } from 'glm';
 import { Entity, Transform, Model } from 'engine/core/core.js';
+import { PetCatAnimator } from './PetCatAnimator.js';
 
 let catId = 0;
 
@@ -30,6 +31,10 @@ export function createCat(
 
   const model = new Model({ primitives: modelTemplate.primitives });
   cat.addComponent(model);
+  cat.addComponent(new PetCatAnimator(cat, {
+    startTime: 0,
+    enabled: true,
+  }));
 
   scene.push(cat);
   scene.entitiesByName.set(cat.name, cat);

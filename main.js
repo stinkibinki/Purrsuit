@@ -11,6 +11,7 @@ import { Physics } from './Physics.js';
 import { BurleyLight } from './BurleyLight.js';
 import { CatSpawner } from './CatSpawner.js';
 import { createCat } from './CatFactory.js';
+import { PetHandAnimator } from './PetHandAnimator.js';
 
 import {
     Camera,
@@ -118,6 +119,7 @@ camera.customProperties.isPlayer = true;
 // hand + attaching to camera
 const hand = scene.getEntityByName("Hand");
 hand.addParent(camera);
+hand.addComponent(new PetHandAnimator(hand, { startTime: 0, enabled: true }));
 
 // collision
 const physics = new Physics(scene);
