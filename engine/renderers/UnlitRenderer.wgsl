@@ -38,7 +38,7 @@ struct Light {
 }
 
 struct LightUniforms {
-    lights: array<Light, 7>,
+    lights: array<Light, 8>,
 }
 
 struct ModelUniforms {
