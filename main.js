@@ -39,6 +39,23 @@ await gltfLoader.load(new URL('./game/models/map/map.gltf', import.meta.url));
 
 const scene = gltfLoader.loadScene(gltfLoader.defaultScene);
 
+/**
+ * Delete entity from scene (or map)
+ * @param {*} delEnt entity to remove
+ * @param {*} cornerOfShame instead of deleting, it moves the entity off the map
+ */
+scene.deleteEntity = (delEnt, cornerOfShame) => {
+    if (cornerOfShame) {
+        const t = delEnt.getComponentOfType(Transform);
+        t.translation[0] = 30; // gre izven mape
+    }
+    else {
+        scene.pop(delEnt);
+        scene.entitiesByName.pop(delEnt?.name);
+    }
+    
+}
+
 // add bolt model to scene
 const boltLoader = new GLTFLoader();
 await boltLoader.load(new URL('./game/models/powerup/bolt.gltf', import.meta.url));
@@ -59,6 +76,7 @@ if (boltModel) {
 }
 
 scene.push(bolt);
+bolt.name = "Bolt";
 
 // add rock model to scene
 const rockLoader = new GLTFLoader();
@@ -123,6 +141,12 @@ hand.addParent(camera);
 const physics = new Physics(scene);
 for (const entity of scene) {
     setStaticCollision(entity);
+
+    if (entity.name?.startsWith("Cat_") || entity?.name == "Bolt") {
+        entity.customProperties = entity.customProperties ?? {};
+        entity.customProperties.isInteractable = true;
+    }
+    
 }
 
 // park bounds (fence)

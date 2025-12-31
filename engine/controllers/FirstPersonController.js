@@ -154,4 +154,10 @@ export class FirstPersonController {
         this.keys[e.code] = false;
     }
 
+    changeSpeed(newSpeed) {
+        this.maxSpeed = newSpeed;
+    }
+
+    setDefaultSpeed() { this.maxSpeed = 5; }
+
 }
