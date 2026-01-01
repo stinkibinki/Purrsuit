@@ -124,7 +124,7 @@ scene.entitiesByName.set("Cat", firstCat);
 
 // 1st person camera
 const camera = scene.find(node => node.getComponentOfType(Camera));
-camera.addComponent(new FirstPersonController(camera, canvas));
+camera.addComponent(new FirstPersonController(camera, document.body)); // previously (camera, canvas)
 camera.aabb = { // aabb collision limit
     min: [-0.2, -0.8, -0.2],
     max: [0.2, 0.2, 0.2],
