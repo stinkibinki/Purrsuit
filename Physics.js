@@ -2,6 +2,7 @@ import { vec3, mat4 } from 'glm';
 import { getGlobalModelMatrix } from 'engine/core/SceneUtils.js';
 import { Transform } from 'engine/core/core.js';
 import { Model } from 'engine/core/Model.js';
+import { FirstPersonController } from 'engine/controllers/FirstPersonController.js';
 
 export class Physics {
 
@@ -13,10 +14,17 @@ export class Physics {
         for (const entity of this.scene) {
             if (entity.customProperties?.isDynamic) {
                 for (const other of this.scene) {
-                    if (entity !== other && other.customProperties?.isStatic) {
-                        if(other.customProperties?.isFence) continue; // skip fence (we're hard checking the perimiter instead)
-                        this.resolveCollision(entity, other);
+                    if (entity !== other) {
+                        if (other.customProperties?.isStatic) {
+                            if (other.customProperties?.isFence) continue; // skip fence (we're hard checking the perimiter instead)
+                            this.resolveCollision(entity, other);
+                        }
+
+                        if (entity.customProperties?.isPlayer && other.customProperties?.isInteractable) {
+                            this.checkInteractionCollision(entity, other);
+                        }
                     }
+                    
                 }
             }
 
@@ -35,6 +43,69 @@ export class Physics {
         // the middle value is height - don't change it
         //transform.translation[1] = Math.min(Math.max(transform.translation[1], bounds.min[1] + offset), bounds.max[1] - offset);
         transform.translation[2] = Math.min(Math.max(transform.translation[2], bounds.min[2] + offset), bounds.max[2] - offset);
+    }
+
+    checkInteractionCollision(p, x) {
+        if (x.customProperties?.isInteractable !== true) return;
+
+        const pBox = this.getTransformedAABB(p); // player
+        const xBox = this.getInteractionBox(x);
+
+        const isColliding = this.aabbIntersection(pBox, xBox);
+        if (!isColliding) return;
+
+        if (x.name == "Bolt") {
+            // speed powerup
+            const pov = p.getComponentOfType(FirstPersonController);
+            pov.changeSpeed(10);
+
+            this.scene.deleteEntity(x);
+            // delete bolt light
+            const bl = this.scene.entitiesByName.get("BoltLight");
+            this.scene.deleteEntity(bl, true);
+
+            this.scene.HUDMessage = "Speed PowerUp Active!";
+            this.scene.updateHUD();
+
+            setTimeout((p = pov, sc = this.scene) => {
+                sc.HUDMessage = "";
+                sc.updateHUD();
+                p.setDefaultSpeed();
+            }, 10000); // reset speed after 10s
+        }
+        else {
+            // cat pickup
+            //console.log("cat time", this.scene.isIKeyPressed);
+            if (this.scene.isIKeyPressed) {
+                this.scene.isIKeyPressed = false; // da ne zbriše večkrat na en press
+                this.scene.numOfCatsCollected++;
+                this.scene.updateHUD();
+                this.scene.deleteEntity(x); // collect the cat
+            }
+        }
+    }
+
+    getInteractionBox(entity) {
+        // "aabb" box centered on x,z coords
+        const half = 1.5;
+        const t = entity.getComponentOfType(Transform);
+        const cx = t.translation[0];
+        const cy = t.translation[1];
+        const cz = t.translation[2];
+
+        const min = [0, 0, 0];
+        const max = [0, 0, 0];
+
+        min[0] = cx - half;
+        max[0] = cx + half;
+
+        min[1] = cy - half;
+        max[1] = cy + half;
+
+        min[2] = cz - half;
+        max[2] = cz + half;
+
+        return { min: min, max: max };
     }
 
     intervalIntersection(min1, max1, min2, max2) {
@@ -82,7 +153,7 @@ export class Physics {
             // aabb centered on x,z coords
             const t = entity.getComponentOfType(Transform);
             const cx = t.translation[0];
-            const cz = t.translation[2]; 
+            const cz = t.translation[2];
 
             newmin[0] = cx - half;
             newmax[0] = cx + half;

@@ -14,7 +14,8 @@ export class FirstPersonController {
         pointerSensitivity = 0.002,
     } = {}) {
         this.entity = entity;
-        this.domElement = domElement;
+        this.domElement = domElement.querySelector("canvas") ?? domElement;
+        this.fullDomElement = domElement;
         this.enabled = false;  // Start disabled, will be enabled after menu closes
 
         this.pitch = pitch;
@@ -42,7 +43,7 @@ export class FirstPersonController {
         this.maxSpeed = maxSpeed;
         this.decay = decay;
         this.pointerSensitivity = pointerSensitivity;
-
+        
         this.initHandlers();
     }
 
@@ -51,15 +52,23 @@ export class FirstPersonController {
         this.keydownHandler = this.keydownHandler.bind(this);
         this.keyupHandler = this.keyupHandler.bind(this);
 
-        const element = this.domElement;
-        const doc = element.ownerDocument;
+        const canvas = this.domElement;
+        const playButton = this.fullDomElement.querySelector("#playButton");
+
+        const doc = this.domElement.ownerDocument;
 
         doc.addEventListener('keydown', this.keydownHandler);
         doc.addEventListener('keyup', this.keyupHandler);
+        
+        const tryLock = () => {
+            canvas.requestPointerLock();
+        };
 
-        element.addEventListener('click', e => element.requestPointerLock());
+        canvas.addEventListener('click', tryLock);
+        playButton.addEventListener('click', tryLock);
+
         doc.addEventListener('pointerlockchange', e => {
-            if (doc.pointerLockElement === element) {
+            if (doc.pointerLockElement === canvas) {
                 doc.addEventListener('pointermove', this.pointermoveHandler);
             } else {
                 doc.removeEventListener('pointermove', this.pointermoveHandler);
@@ -153,5 +162,11 @@ export class FirstPersonController {
     keyupHandler(e) {
         this.keys[e.code] = false;
     }
+
+    changeSpeed(newSpeed) {
+        this.maxSpeed = newSpeed;
+    }
+
+    setDefaultSpeed() { this.maxSpeed = 5; }
 
 }
