@@ -33,7 +33,7 @@ export function createCat(
   cat.addComponent(model);
   cat.addComponent(new PetCatAnimator(cat, {
     startTime: 0,
-    enabled: true,
+    enabled: false,
   }));
 
   scene.push(cat);

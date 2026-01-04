@@ -161,7 +161,7 @@ camera.customProperties.isPlayer = true;
 // hand + attaching to camera
 const hand = scene.getEntityByName("Hand");
 hand.addParent(camera);
-hand.addComponent(new PetHandAnimator(hand, { startTime: 0, enabled: true }));
+hand.addComponent(new PetHandAnimator(hand, { startTime: 0, enabled: false }));
 
 var kittyCounter = 0;
 // collision
