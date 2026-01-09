@@ -11,6 +11,8 @@ import { Physics } from './Physics.js';
 import { BurleyLight } from './BurleyLight.js';
 import { CatSpawner } from './CatSpawner.js';
 import { createCat } from './CatFactory.js';
+import { PetHandAnimator } from './PetHandAnimator.js';
+import { SpinAnimator } from './SpinAnimator.js';
 
 import {
     Camera,
@@ -87,6 +89,10 @@ if (boltModel) {
         }
     }
 }
+bolt.addComponent(new SpinAnimator(bolt, {
+  axis: [0, 1, 0], // spin around Y
+  speed: 2.0,     // faster spin
+}));
 
 scene.push(bolt);
 bolt.name = "Bolt";
@@ -155,6 +161,7 @@ camera.customProperties.isPlayer = true;
 // hand + attaching to camera
 const hand = scene.getEntityByName("Hand");
 hand.addParent(camera);
+hand.addComponent(new PetHandAnimator(hand, { startTime: 0, enabled: false }));
 
 var kittyCounter = 0;
 // collision
@@ -280,6 +287,7 @@ scene.updateHUD = () => {
     document.getElementById("score").textContent = "Cats Left: " + (NUM_OF_CATS - scene.numOfCatsCollected);
     if (NUM_OF_CATS - scene.numOfCatsCollected <= 0) {
         scene.HUDMessage = "You win!";
+        clearInterval(timerIntervalID); // disable timer
         disableControls();
         // or a win screen
     }

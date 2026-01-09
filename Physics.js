@@ -3,6 +3,9 @@ import { getGlobalModelMatrix } from 'engine/core/SceneUtils.js';
 import { Transform } from 'engine/core/core.js';
 import { Model } from 'engine/core/Model.js';
 import { FirstPersonController } from 'engine/controllers/FirstPersonController.js';
+import { TimedDespawn } from './TimedDespawn.js';
+import { PetHandAnimator } from './PetHandAnimator.js';
+import { PetCatAnimator } from './PetCatAnimator.js';
 
 export class Physics {
 
@@ -21,7 +24,7 @@ export class Physics {
                         }
 
                         if (entity.customProperties?.isPlayer && other.customProperties?.isInteractable) {
-                            this.checkInteractionCollision(entity, other);
+                            this.checkInteractionCollision(entity, other, t);
                         }
                     }
                     
@@ -45,7 +48,7 @@ export class Physics {
         transform.translation[2] = Math.min(Math.max(transform.translation[2], bounds.min[2] + offset), bounds.max[2] - offset);
     }
 
-    checkInteractionCollision(p, x) {
+    checkInteractionCollision(p, x, t) {
         if (x.customProperties?.isInteractable !== true) return;
 
         const pBox = this.getTransformedAABB(p); // player
@@ -77,11 +80,48 @@ export class Physics {
             // cat pickup
             //console.log("cat time", this.scene.isIKeyPressed);
             if (this.scene.isIKeyPressed) {
-                this.scene.isIKeyPressed = false; // da ne zbriše večkrat na en press
-                this.scene.numOfCatsCollected++;
-                this.scene.updateHUD();
-                this.scene.deleteEntity(x); // collect the cat
+            this.scene.isIKeyPressed = false;
+
+            x.customProperties ??= {};
+            if (x.customProperties.isBeingPetted) return;
+            x.customProperties.isBeingPetted = true;
+
+            x.customProperties.isInteractable = false;
+
+            const hand = this.scene.getEntityByName("Hand");
+            if (hand) {
+                let ha = hand.getComponentsOfType(PetHandAnimator)?.[0];
+                if (!ha) {
+                ha = new PetHandAnimator(hand, { enabled: false });
+                hand.addComponent(ha);
+                }
+                ha.startTime = t;
+                ha.play();
             }
+
+            let ca = x.getComponentsOfType(PetCatAnimator)?.[0];
+            if (!ca) {
+                ca = new PetCatAnimator(x, { enabled: false });
+                x.addComponent(ca);
+            }
+            ca.startTime = t;
+            ca.play();
+
+            this.scene.numOfCatsCollected++;
+            this.scene.updateHUD();
+
+            const PET_DURATION = 1.5;
+            x.addComponent(new TimedDespawn(x, this.scene, {
+                duration: PET_DURATION,
+                startTime: t,
+                onDone: () => {
+                
+                const hand = this.scene.getEntityByName("Hand");
+                hand?.getComponentsOfType(PetHandAnimator)?.[0]?.pause();
+                }
+            }));
+            }
+
         }
     }
 
