@@ -366,13 +366,13 @@ async function loadCatPrefab(gltfUrl, nodeName) {
 
   const entity = catScene.getEntityByName(nodeName);
   if (!entity) {
-    console.log('catScene names:', [...catScene.entitiesByName.keys()]);
+    //console.log('catScene names:', [...catScene.entitiesByName.keys()]);
     throw new Error(`Could not find entity named "${nodeName}" in ${gltfUrl}`);
   }
 
   const model = entity.getComponentOfType(Model);
   if (!model) {
-    console.log('Cat entity components:', entity.components);
+    //console.log('Cat entity components:', entity.components);
     throw new Error(`Entity "${nodeName}" exists but has no Model component`);
   }
 
@@ -436,6 +436,6 @@ function spawnCatsFromMarkers(scene, catPrefab, { markerPrefix, count, minDistan
     );
   });
 
-  console.log('Scene entity count after spawning:', scene.length);
-  console.log('Cats in entitiesByName:', [...scene.entitiesByName.keys()].filter(k => k.startsWith('Cat_')));
+  //console.log('Scene entity count after spawning:', scene.length);
+  //console.log('Cats in entitiesByName:', [...scene.entitiesByName.keys()].filter(k => k.startsWith('Cat_')));
 }
