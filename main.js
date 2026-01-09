@@ -255,7 +255,7 @@ document.getElementById("playButton").addEventListener('click', (e) => {
 
 });
 
-const maxTime = 1 * 60 * 1000;
+const maxTime = 1.1 * 60 * 1000;
 var time = maxTime;
 function timer() {
     time -= 1000; // -1sec
@@ -287,6 +287,7 @@ scene.updateHUD = () => {
     document.getElementById("score").textContent = "Cats Left: " + (NUM_OF_CATS - scene.numOfCatsCollected);
     if (NUM_OF_CATS - scene.numOfCatsCollected <= 0) {
         scene.HUDMessage = "You win!";
+        clearInterval(timerIntervalID); // disable timer
         disableControls();
         // or a win screen
     }
