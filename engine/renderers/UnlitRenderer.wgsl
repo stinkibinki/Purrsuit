@@ -153,7 +153,7 @@ fn fragment(input: FragmentInput) -> FragmentOutput {
     var N = normalize(input.normal);
     
     // normal mapping
-    if (material.hasNormalMap > 0.5) {
+    if (material.hasNormalMap > 0) {
         let scaledNormal = normalize((normalColor.xyz * 2 - 1) * vec3(vec2(material.normalFactor), 1));
         let T = normalize(input.tangent);
         let B = normalize(cross(N, T));
