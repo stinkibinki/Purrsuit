@@ -1,6 +1,8 @@
 # Purrsuit
 Projekt pri predmetu Računalniška Grafika (FRI VSŠ 2. letnik)
 
+Deployed at [stinkibinki.github.io/Purrsuit](https://stinkibinki.github.io/Purrsuit/)
+
 ## Zagon
 `python -m http.server 3000`
 
